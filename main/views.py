@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 
 from .models import App
 
@@ -14,3 +15,8 @@ def index(request):
 
 def about(request):
     return render(request, 'main/about.html')
+
+
+def app_detail(request, app_id):
+    app = get_object_or_404(App, id=app_id)
+    return render(request, 'main/app_detail.html', {'app': app})
