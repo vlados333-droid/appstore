@@ -7,7 +7,13 @@
 
     <h2>{{ app.name }}</h2>
 
-    <p>Категория: {{ app.category|default:"без категории" }}</p>
+    <p>Категория:
+        {% if app.category %}
+            <a href="{% url 'category' app.category.id %}">{{ app.category }}</a>
+        {% else %}
+            без категории
+        {% endif %}
+    </p>
 
     <p>
         {% if app.price == 0 %}
