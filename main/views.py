@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Q
 from django.core.paginator import Paginator
+from pyexpat.errors import messages
 
 from .models import App, Category
 
@@ -60,3 +61,15 @@ def category_detail(request, category_id):
 def new(request):
     apps = App.objects.order_by('-created_at')[:5]
     return render(request, 'main/new.html', {'apps': apps})
+
+
+def archive_year(request, year):
+    return HttpResponse(f"Вы открыли архив за {year} год")
+
+
+def apps_list(request, is_free):
+    if is_free:
+        message = 'Это бесплатные приложения'
+    else:
+        message = 'Это платные приложения'
+    return HttpResponse(message)

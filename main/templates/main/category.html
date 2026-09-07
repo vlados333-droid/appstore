@@ -3,13 +3,13 @@
 {% block title %}{{ category.name }} - AppStore{% endblock %}
 
 {% block content %}
-    <p><a href="{% url 'index' %}"><- ко всем приложениям</a></p>
+    <p><a href="{% url 'main:index' %}"><- ко всем приложениям</a></p>
 
     <h2>Категория: {{ category.name }}</h2>
 
     <ul>
         {% for app in apps %}
-            <li><strong><a href="{% url 'app_detail' app.id %}">{{ app.name }}</a> -
+            <li><strong><a href="{% url 'main:app_detail' app.id %}">{{ app.name }}</a> -
                 {% if app.price == 0 %}Бесплатно{% else %}{{ app.price }} ${% endif %}
             </li>
         {% empty %}
