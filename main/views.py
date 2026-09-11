@@ -1,7 +1,10 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_GET
+
+from django.views.generic import TemplateView, ListView, DetailView
 
 from .models import App, Category
 
@@ -39,13 +42,37 @@ def index(request):
     })
 
 
-def about(request):
-    return render(request, 'main/about.html')
+# @require_GET
+# def about(request):
+#     return render(request, 'main/about.html')
 
 
-def app_detail(request, app_id):
-    app = get_object_or_404(App, id=app_id)
-    return render(request, 'main/app_detail.html', {'app': app})
+class AboutView(TemplateView):
+    template_name = 'main/about.html'
+
+
+# def app_detail(request, app_id):
+#     app = get_object_or_404(App, id=app_id)
+#     return render(request, 'main/app_detail.html', {'app': app})
+
+
+class AppDetailView(DetailView):
+    model = App
+    template_name = 'main/app_detail.html'
+    context_object_name = 'app'
+    pk_url_kwarg = 'app_id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        app = self.object
+        context['similar_apps'] = (
+            App.objects.filter(
+                price__gte=app.price - 10,
+                price__lte=app.price + 10,
+            )
+            .exclude(id=app.id)[:3]
+        )
+        return context
 
 
 def category_detail(request, category_id):
@@ -57,14 +84,39 @@ def category_detail(request, category_id):
     })
 
 
-def new(request):
-    apps = App.objects.order_by('-created_at')[:5]
-    return render(request, 'main/new.html', {'apps': apps})
+# def new(request):
+#     apps = App.objects.order_by('-created_at')[:5]
+#     return render(request, 'main/new.html', {'apps': apps})
+
+
+class NewAppView(ListView):
+    model = App
+    template_name = 'main/new.html'
+    context_object_name = 'apps'
+    ordering = ['-created_at']
+    paginate_by = 3
 
 
 def apps_list(request, is_free):
     if is_free:
-        message = 'Это бесплатные приложения'
+        apps = App.objects.filter(price=0)
+        title = 'Бесплатные приложения'
     else:
-        message = 'Это платные приложения'
-    return HttpResponse(message)
+        apps = App.objects.filter(price__gt=0)
+        title = 'Платные приложения'
+
+    return render(request, 'main/apps_list.html', {
+        'apps': apps,
+        'title': title,
+    })
+
+
+def api_app_detail(request, app_id):
+    app = get_object_or_404(App, id=app_id)
+    data = {
+        'id': app.id,
+        'name': app.name,
+        'description': app.description,
+        'price': app.price,
+    }
+    return JsonResponse(data)
