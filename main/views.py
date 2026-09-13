@@ -97,18 +97,37 @@ class NewAppView(ListView):
     paginate_by = 3
 
 
-def apps_list(request, is_free):
-    if is_free:
-        apps = App.objects.filter(price=0)
-        title = 'Бесплатные приложения'
-    else:
-        apps = App.objects.filter(price__gt=0)
-        title = 'Платные приложения'
+# def apps_list(request, is_free):
+#     if is_free:
+#         apps = App.objects.filter(price=0)
+#         title = 'Бесплатные приложения'
+#     else:
+#         apps = App.objects.filter(price__gt=0)
+#         title = 'Платные приложения'
+#
+#     return render(request, 'main/apps_list.html', {
+#         'apps': apps,
+#         'title': title,
+#     })
 
-    return render(request, 'main/apps_list.html', {
-        'apps': apps,
-        'title': title,
-    })
+
+class AppsIsFreeListView(ListView):
+    model = App
+    template_name = 'main/apps_list.html'
+    context_object_name = 'apps'
+
+    def get_queryset(self):
+        if self.kwargs.get('is_free'):
+            return App.objects.filter(price=0)
+        return App.objects.filter(price__gt=0)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.kwargs.get('is_free'):
+            context['title'] = 'Бесплатные приложения'
+        else:
+            context['title'] = 'Платные приложения'
+        return context
 
 
 def api_app_detail(request, app_id):

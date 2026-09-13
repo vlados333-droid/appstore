@@ -12,8 +12,8 @@ urlpatterns = [
     path('app/<int:app_id>/', views.AppDetailView.as_view(), name='app_detail'),
     path('new/', views.NewAppView.as_view(), name='new'),
 
-    path('free-apps/', views.apps_list, {'is_free': True}, name='free_apps'),
-    path('paid-apps/', views.apps_list, {'is_free': False}, name='paid_apps'),
+    path('free-apps/', views.AppsIsFreeListView.as_view(), {'is_free': True}, name='free_apps'),
+    path('paid-apps/', views.AppsIsFreeListView.as_view(), {'is_free': False}, name='paid_apps'),
 
     path('api/app/<int:app_id>/', views.api_app_detail, name='api_app_detail'),
 ]
