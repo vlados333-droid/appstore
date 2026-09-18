@@ -28,7 +28,6 @@ def index(request):
 
     apps = apps.order_by(SORTS.get(sort, '-created_at'))
     featured = App.objects.order_by('-price').first()
-    categories = Category.objects.all()
 
     paginator = Paginator(apps, 3)
     page_number = request.GET.get('page')
@@ -39,7 +38,6 @@ def index(request):
         'sort': sort,
         'page_obj': page_obj,
         'featured': featured,
-        'categories': categories,
     })
 
 
