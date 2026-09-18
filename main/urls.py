@@ -1,4 +1,4 @@
-from django.urls import path, register_converter
+from django.urls import path
 
 from . import views
 
@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('about/', views.AboutView.as_view(), name='about'),
     path('app/<int:app_id>/', views.AppDetailView.as_view(), name='app_detail'),
+    path('app/<int:app_id>/review/', views.add_review, name='add_review'),
     path('new/', views.NewAppView.as_view(), name='new'),
 
     path('free-apps/', views.AppsIsFreeListView.as_view(), {'is_free': True}, name='free_apps'),
