@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('about/', views.AboutView.as_view(), name='about'),
     path('app/<int:app_id>/', views.AppDetailView.as_view(), name='app_detail'),
+    path('app/<int:app_id>/edit/', views.edit_app, name='edit_app'),
     path('app/<int:app_id>/review/', views.add_review, name='add_review'),
     path('new/', views.NewAppView.as_view(), name='new'),
 
@@ -18,6 +19,7 @@ urlpatterns = [
 
     path('api/app/<int:app_id>/', views.api_app_detail, name='api_app_detail'),
     path('add-app/', views.add_app, name='add_app'),
+    path('my-apps/', views.my_apps, name='my_apps'),
 
     path('register/', views.register, name='register'),
     path('login/', views.StoreLoginView.as_view(), name='login'),
