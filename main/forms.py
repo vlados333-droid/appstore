@@ -49,6 +49,15 @@ class AppForm(forms.ModelForm):
         }
 
 
+class ForSuperUserEditAppForm(AppForm):
+    class Meta(AppForm.Meta):
+        fields = ['name', 'description', 'price', 'category', 'icon', 'author']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['author'].label = 'Автор'
+
+
 class RegisterForm(UserCreationForm):
     class Meta:
         model = User

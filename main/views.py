@@ -14,7 +14,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, ListView, DetailView
 
 from .models import App, Category
-from .forms import ReviewForm, AppForm, RegisterForm
+from .forms import ReviewForm, AppForm, RegisterForm, ForSuperUserEditAppForm
 
 SORTS = {
     'new': '-created_at',
@@ -244,13 +244,19 @@ def edit_app(request, app_id):
         return redirect('main:app_detail', app_id=app.id)
 
     if request.method == "POST":
-        form = AppForm(request.POST, request.FILES, instance=app)
+        if request.user.is_superuser:
+            form = ForSuperUserEditAppForm(request.POST, request.FILES, instance=app)
+        else:
+            form = AppForm(request.POST, request.FILES, instance=app)
         if form.is_valid():
             form.save()
             messages.success(request, f"Карточка приложения {app.name} изменена")
             return redirect('main:app_detail', app_id=app.id)
 
     else:
-        form = AppForm(instance=app)
+        if request.user.is_superuser:
+            form = ForSuperUserEditAppForm(instance=app)
+        else:
+            form = AppForm(instance=app)
 
     return render(request, 'main/edit_app.html', {'form': form, 'app': app})
