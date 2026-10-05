@@ -7,9 +7,16 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import (
+    LoginView,
+    LogoutView,
+    PasswordResetView,
+    PasswordResetDoneView,
+    PasswordResetConfirmView,
+    PasswordResetCompleteView,
+)
 from django.contrib import messages
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 
 from django.views.generic import TemplateView, ListView, DetailView
 
@@ -83,6 +90,10 @@ class AppDetailView(DetailView):
             form.fields.pop('username')
         context['form'] = form
         context['reviews'] = app.review_set.order_by('-created_at')
+        context['is_favorite'] = (
+            self.request.user.is_authenticated
+            and app.favorited_by.filter(pk=self.request.user.pk).exists()
+        )
         return context
 
 
@@ -116,6 +127,8 @@ def add_review(request, app_id):
         'form': form,
         'reviews': reviews,
         'similar_apps': similar_apps,
+        'is_favorite': request.user.is_authenticated
+                       and app.favorited_by.filter(pk=request.user.pk).exists()
     })
 
 
@@ -239,7 +252,12 @@ def my_apps(request):
 @login_required
 def edit_app(request, app_id):
     app = get_object_or_404(App, id=app_id)
-    if not request.user.is_staff and app.author_id != request.user.id:
+    if not (
+        request.user.has_perm('main.change_app')
+        or request.user.is_staff
+        or app.author_id == request.user.id
+    ):
+        print('1')
         messages.error(request, 'Редактировать карточку приложения может только его автор!')
         return redirect('main:app_detail', app_id=app.id)
 
@@ -260,3 +278,61 @@ def edit_app(request, app_id):
             form = AppForm(instance=app)
 
     return render(request, 'main/edit_app.html', {'form': form, 'app': app})
+
+
+class StorePasswordResetView(PasswordResetView):
+    template_name = 'main/password_reset_form.html'
+    email_template_name = 'main/password_reset_email.html'
+    subject_template_name = 'main/password_reset_subject.txt'
+    success_url = reverse_lazy('main:password_reset_done')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['email'].label = 'Электронная почта'
+        return form
+
+
+class StorePasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'main/password_reset_done.html'
+
+
+class StorePasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'main/password_reset_confirm.html'
+    success_url = reverse_lazy('main:password_reset_complete')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if form is not None and 'new_password1' in form.fields:
+            form.fields['new_password1'].label = 'Новый пароль'
+            form.fields['new_password2'].label = 'Повтор пароля'
+        return form
+
+
+class StorePasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'main/password_reset_complete.html'
+
+
+@login_required
+def favorites(request):
+    apps = request.user.favorite_apps.select_related('category', 'author').order_by('name')
+    return render(request, 'main/favorites.html', {'apps': apps})
+
+
+@require_POST
+def toggle_favorite(request, app_id):
+    app = get_object_or_404(App, id=app_id)
+
+    if not request.user.is_authenticated:
+        login_url = reverse('main:login')
+        next_url = reverse("main:app_detail", args=[app_id])
+        return redirect(f"{login_url}?next={next_url}")
+
+    if app.favorited_by.filter(pk=request.user.pk).exists():
+        app.favorited_by.remove(request.user)
+        messages.success(request, f"{app.name} - убрано из избранного")
+
+    else:
+        app.favorited_by.add(request.user)
+        messages.success(request, f"{app.name} - добавили в избранное")
+
+    return redirect('main:app_detail', app_id=app.id)
