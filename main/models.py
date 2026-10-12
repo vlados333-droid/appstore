@@ -1,5 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
 
+from PIL.JpegPresets import presets
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -61,6 +62,19 @@ class App(models.Model):
             price__gte=self.price - 10,
             price__lte=self.price + 10,
         ).exclude(pk=self.pk)[:3]
+
+    @classmethod
+    def discount_paid(cls, percent):
+        if type(percent) is not int or not 1 <= percent <= 90:
+            raise ValueError('Скидка должна быть целым числом от 1 до 90')
+        factor = (Decimal(100) - Decimal(percent)) / Decimal(100)
+        paid = list(cls.objects.filter(price__gt=0))
+        for app in paid:
+            app.price = (app.price * factor).quantize(
+                Decimal('0.01'),
+                rounding=ROUND_HALF_UP,
+            )
+        return cls.objects.bulk_update(paid, ['price'])
 
     class Meta:
         verbose_name = 'Приложение'
