@@ -22,13 +22,7 @@
         {% endif %}
     </p>
 
-    <p>
-        {% if app.price == 0 %}
-            <strong>Бесплатно</strong>
-        {% else %}
-            <strong>Цена: {{ app.price }} $</strong>
-        {% endif %}
-    </p>
+    <p><strong>Цена: {{ app.price_label }}</strong></p>
 
     {% if app.description %}
         <p>Описание: {{ app.description }}</p>
