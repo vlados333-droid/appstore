@@ -4,71 +4,89 @@
 
 {% block content %}
 
-    <p><a href="{% url 'main:index' %}"><- Ко всем приложениям</a></p>
+<p><a href="{% url 'main:index' %}"><- Ко всем приложениям</a></p>
 
-    <h2>{{ app.name }}</h2>
+<h2>{{ app.name }}</h2>
 
-    {% if app.icon %}
-        <p><img src="{{ app.icon.url }}" alt="{{ app.name }}" class="app-icon-lg"></p>
+{% if app.icon %}
+<p><img src="{{ app.icon.url }}" alt="{{ app.name }}" class="app-icon-lg"></p>
+{% else %}
+<p>Иконка пока не загружена</p>
+{% endif %}
+
+<p>Категория:
+    {% if app.category %}
+    <a href="{% url 'main:category' app.category.id %}">{{ app.category}}</a>
     {% else %}
-        <p>Иконка пока не загружена</p>
+    Без категории
     {% endif %}
+</p>
 
-    <p>Категория:
-        {% if app.category %}
-             <a href="{% url 'main:category' app.category.id %}">{{ app.category}}</a>
-        {% else %}
-            Без категории
-        {% endif %}
-    </p>
+<p><strong>Цена: {{ app.price_label }}</strong></p>
 
-    <p><strong>Цена: {{ app.price_label }}</strong></p>
+{% if app.description %}
+<p>Описание: {{ app.description }}</p>
+{% else %}
+<p>Описание пока не добавлено</p>
+{% endif %}
 
-    {% if app.description %}
-        <p>Описание: {{ app.description }}</p>
+<p>Добавлено: {{ app.created_at|date:"d.m.Y H:i" }}</p>
+
+<p>Автор:
+    {% if app.author %}
+    {{ app.author.username }}
     {% else %}
-        <p>Описание пока не добавлено</p>
+    не указан
     {% endif %}
+</p>
 
-    <p>Добавлено: {{ app.created_at|date:"d.m.Y H:i" }}</p>
-
-    <p>Автор:
-        {% if app.author %}
-            {{ app.author.username }}
-        {% else %}
-            не указан
-        {% endif %}
-    </p>
-
-    {% if user.is_authenticated %}
-        <form method="post" action="{% url 'main:toggle_favorite' app.id %}">
-            {% csrf_token %}
-            {% if is_favorite %}
-                <button type="submit">Убрать из избранного</button>
-            {% else %}
-                <button type="submit">Добавить в избранное</button>
-            {% endif %}
-        </form>
+{% if user.is_authenticated %}
+<form method="post" action="{% url 'main:toggle_favorite' app.id %}">
+    {% csrf_token %}
+    {% if is_favorite %}
+    <button type="submit">Убрать из избранного</button>
     {% else %}
-        <p><a href="{% url 'main:login' %}?next={{ request.path }}">Войдите</a> чтобы сохранить приложение</p>
+    <button type="submit">Добавить в избранное</button>
     {% endif %}
+</form>
+{% else %}
+<p><a href="{% url 'main:login' %}?next={{ request.path }}">Войдите</a> чтобы сохранить приложение</p>
+{% endif %}
 
-    {% if user.is_authenticated %}
-        {% if perms.main.change_app or user.is_staff or app.author_id == user.id %}
-            <p><a href="{% url 'main:edit_app' app.id %}">Редактировать</a></p>
-        {% endif %}
+{% if purchase %}
+<p>Вы уже купили это приложение с {{ purchase.purchased_at|date:"d.m.Y" }}.
+    Вы купили его за {{ purchase.price_label }}</p>
+{% elif user.is_authenticated and app.author_id == user.id %}
+<p>Это ваше приложение. Покупать его не нужно</p>
+{% elif user.is_authenticated %}
+<form method="post" action="{% url 'main:buy_app' app.id %}">
+    {% csrf_token %}
+    {% if app.price == 0 %}
+    <button type="submit">Установить бесплатно</button>
+    {% else %}
+    <button type="submit">Купить за {{ app.price }}</button>
     {% endif %}
+</form>
+{% else %}
+<p><a href="{% url 'main:login' %}?next={{ request.path }}">Войдите</a> чтобы купить приложение</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+{% if perms.main.change_app or user.is_staff or app.author_id == user.id %}
+<p><a href="{% url 'main:edit_app' app.id %}">Редактировать</a></p>
+{% endif %}
+{% endif %}
 
 <li>
     <p>Примерно за те же деньги:</p>
 
     {% for similar in similar_apps %}
-        <div>
-            <h3><a href="{% url 'main:app_detail' similar.id %}">{{ similar.name }}</a></h3>
-            <p>Цена: {{ similar.price }}</p>
-        </div>
+    <div>
+        <h3><a href="{% url 'main:app_detail' similar.id %}">{{ similar.name }}</a></h3>
+        <p>Цена: {{ similar.price }}</p>
+    </div>
     {% empty %}
-        <p>Похожих по цене приложений нет.</p>
+    <p>Похожих по цене приложений нет.</p>
     {% endfor %}
 </li>
 
@@ -77,38 +95,38 @@
 
     <p>
         {% if app.rating_count %}
-            Средняя оценка: {{ app.rating_avg }} из 5 (отзывов: {{ app.rating_count }})
+        Средняя оценка: {{ app.rating_avg }} из 5 (отзывов: {{ app.rating_count }})
         {% else %}
-            Оценок пока нет
+        Оценок пока нет
         {% endif %}
     </p>
 
     {% for review in reviews %}
-        <article>
-            <p>
-                <strong>{{ review.username }}</strong>
-                — оценка: {{ review.stars }}/5
-                —
-                {% if review.recommended %}
-                    Рекомендует
-                {% else %}
-                    Не рекомендует
-                {% endif %}
-            </p>
-            {% if review.comment %}
-                <p>{{ review.comment }}</p>
+    <article>
+        <p>
+            <strong>{{ review.username }}</strong>
+            — оценка: {{ review.stars }}/5
+            —
+            {% if review.recommended %}
+            Рекомендует
+            {% else %}
+            Не рекомендует
             {% endif %}
-            <p><small>{{ review.created_at|date:"d.m.Y H:i" }}</small></p>
-        </article>
+        </p>
+        {% if review.comment %}
+        <p>{{ review.comment }}</p>
+        {% endif %}
+        <p><small>{{ review.created_at|date:"d.m.Y H:i" }}</small></p>
+    </article>
     {% empty %}
-        <p>Отзывов пока нет. Будьте первым!</p>
+    <p>Отзывов пока нет. Будьте первым!</p>
     {% endfor %}
 </section>
 
 {% if user.is_authenticated %}
-    <p>Отзыв будет опубликован от имени <strong>{{ user.username }}</strong></p>
+<p>Отзыв будет опубликован от имени <strong>{{ user.username }}</strong></p>
 {% else %}
-    <p>Вы можете оставить отзыв и без входа, но лучше > <a href="{% url 'main:login' %}">войти</a></p>
+<p>Вы можете оставить отзыв и без входа, но лучше > <a href="{% url 'main:login' %}">войти</a></p>
 {% endif %}
 
 <section>
