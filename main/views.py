@@ -16,6 +16,7 @@ from django.contrib.auth.views import (
     PasswordResetCompleteView,
 )
 from django.contrib import messages
+from django.forms import modelformset_factory
 from django.urls import reverse_lazy, reverse
 
 from django.views.generic import TemplateView, ListView, DetailView
@@ -256,6 +257,32 @@ class StoreLogoutView(LogoutView):
 def my_apps(request):
     apps = App.objects.filter(author=request.user).order_by('-created_at')
     return render(request, 'main/my_apps.html', {'apps': apps})
+
+
+AppPriceFormSet = modelformset_factory(
+    App,
+    fields=['price'],
+    labels={'price': 'Цена'},
+    extra=0,
+    edit_only=True,
+)
+
+
+@login_required
+def my_prices(request):
+    apps = App.objects.filter(author=request.user).order_by('name')
+    if request.method == "POST":
+        formset = AppPriceFormSet(request.POST, queryset=apps)
+        if formset.is_valid():
+            for form in formset:
+                if 'price' in form.changed_data:
+                    form.instance.price_before_sale = None
+            saved = formset.save()
+            messages.success(request, f"Изменено карточек: {len(saved)}")
+            return redirect('main:my_apps')
+    else:
+        formset = AppPriceFormSet(queryset=apps)
+    return render(request, 'main/my_prices.html', {'formset': formset})
 
 
 @login_required
