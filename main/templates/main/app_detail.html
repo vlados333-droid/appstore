@@ -1,4 +1,5 @@
 {% extends 'main/base.html' %}
+{% load bbcode_tags %}
 {% load store_tags %}
 
 {% block title %}{{ app.name }} - AppStore{% endblock %}
@@ -30,9 +31,10 @@
 </p>
 
 {% if app.description %}
-<p>Описание: {{ app.description }}</p>
+    <p>Описание: </p>
+    <div>{% bbcode app.description %}</div>
 {% else %}
-<p>Описание пока не добавлено</p>
+    <p>Описание пока не добавлено</p>
 {% endif %}
 
 <p>Добавлено: {{ app.created_at|date:"d.m.Y H:i" }}</p>
