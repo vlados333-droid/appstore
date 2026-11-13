@@ -198,3 +198,17 @@ class Purchase(models.Model):
         if self.price_paid == 0:
             return 'Бесплатно'
         return f'{self.price_paid} $'
+
+
+class Screenshot(models.Model):
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='screenshots')
+    image = ThumbnailerImageField(
+        upload_to='screenshots/',
+        resize_source={'size': (800, 800)},
+        validators=[FileExtensionValidator(['png', 'jpg', 'jpeg', 'webp'])],
+        verbose_name='Скриншот'
+    )
+
+    class Meta:
+        verbose_name = 'Скриншот'
+        verbose_name_plural = 'Скриншоты'
